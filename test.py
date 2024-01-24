@@ -2,21 +2,17 @@ import os
 import dotenv
 dotenv.load_dotenv()
 
-from retrieval.bm25_search import bm25_search
-from retrieval.vector_search import vector_search
-from retrieval.hybrid_search import hybrid_search
-
-INDEX_NAME = os.getenv('INDEX_NAME')
+from db.elastic_search import ElasticSearch
 
 
-query = "Website của bộ công an là gì?"
-results = hybrid_search(index_name=INDEX_NAME, query=query)
+es = ElasticSearch()
+response = es.hybrid_search(index_name="cdnc_law", query="Tiền lương thử việc của người lao động được quy định như thế nào")
 
-# for hit in results['hits']['hits']:
+for doc in response:
+    print(doc)
+    print("====================================")
+    # break
+
+# for hit in response['hits']['hits']:
 #     print(hit['_source']['content'])
-#     print('-------------------')
-
-for i, result in enumerate(results):
-    print(i)
-    print(result['content'])
-    print('-------------------')
+#     print("====================================")

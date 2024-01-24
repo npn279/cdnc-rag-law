@@ -20,7 +20,8 @@ def get_emb(text: str):
         model=EMB_MODEL
     )
 
-    return response.data[0].embedding
+    return response
+
 
 if __name__ == '__main__':
     text = 'Hello World'
