@@ -22,8 +22,25 @@ Nhiệt độ nóng chảy của đồng là bao nhiêu?
 - output: """
 
 REWRITE_TEMPLATE = """
-Your task is to generate at most four phrases (you need to decide the number of phrases suitable for the question) from the query below to use in web search to retrieve information to answer this question.
-Split the queries by new line, do not add any preamle text.
+You are a helpful assistant.
+Your task is to decide whether the question is a legal question or not.
+if the question is a legal question, rewrite it to a more generic step-back questions splitted by new line, which is easier to answer.
+otherwise, just return "NO".
+
+The rewritten questions should be in the same language as the input question.
+Do not add any preamle text.
+
+if it has queries, format the output as:
+```
+query1
+query2
+...
+```
+
+otherwise, format the output as:
+```
+NO
+```
 
 Question: {query}
 Queries:
