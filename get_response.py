@@ -67,7 +67,7 @@ def get_response(query: str, history = [], k: int = 5):
             context = ""
 
         prompt = ANSWER_TEMPLATE.format(context=context, query=query)
-        # print(prompt)
+        print(prompt)
         response = gemini.generate(prompt=prompt, temperature=0.4)
 
         answer = default_answer
@@ -86,12 +86,14 @@ def main():
     #      {"role": "user", "parts": ["Chào bạn"]},
     #      {"role": "model", "parts": ["Xin chào, tôi là Lawie. \nTôi là hệ thống hỗ trợ hỏi đáp pháp luật."]}
     # ]
-    query = "Trong trường hợp nào thì có thể khởi tố, điều tra, truy tố, xét xử đối với người mà hành vi của họ đã có bản án của Tòa án đã có hiệu lực pháp luật?"
+    # query = "Trong trường hợp nào thì có thể khởi tố, điều tra, truy tố, xét xử đối với người mà hành vi của họ đã có bản án của Tòa án đã có hiệu lực pháp luật?"
     # query = "Ai là luật sư đầu tiên trên thế giới"
-    # query = "Tiền lương thử việc của người lao động được quy định như thế nào"
+    query = "Tiền lương thử việc của người lao động được quy định như thế nào"
     s_time = time.time()
     response = get_response(query=query)
-    pprint(response)
+    print(response[0])
+    print("-----")
+    print(response[1])
     e_time = time.time()
     print("Response time: ", e_time - s_time)
 
