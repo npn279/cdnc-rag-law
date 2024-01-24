@@ -5,7 +5,7 @@ DEFAULT_SYSTEM_PROMPT="You are a helpful assistant."
 
 # --- REWRITE TEMPLATE ---
 
-_REWRITE_TEMPLATE = """\
+REWRITE_TEMPLATE = """\
 You are an expert at world knowledge. 
 Your task is to step back and paraphrase a question to a more generic step-back questions, which is easier to answer. 
 Your step-back questions output are splitted by new line.
@@ -21,9 +21,9 @@ Nhiệt độ nóng chảy của đồng là bao nhiêu?
 - input: {query}
 - output: """
 
-REWRITE_TEMPLATE = """
+_REWRITE_TEMPLATE = """
 You are a helpful assistant.
-Your task is to decide whether the question is a legal question or not.
+Your task is to decide whether the question is a legal/ related to question or not.
 if the question is a legal question, rewrite it to a more generic step-back questions splitted by new line, which is easier to answer.
 otherwise, just return "NO".
 
@@ -41,8 +41,9 @@ otherwise, format the output as:
 ```
 NO
 ```
-
+-----
 Question: {query}
+-----
 Queries:
 """
 
@@ -75,3 +76,15 @@ question: {query}
 -----------
 # ANSWER
 """
+
+# --- Classify query ---
+CLASSIFY_TEMPLATE = """Your task is to classify a text/question into 2 classess, to help a system answer to the user:
+- legal
+Description: text/question related to legal, or law domain
+- other
+Description: text/question is not legal domain
+
+Provide the class without any preamble text.
+query: {query}
+
+class: """

@@ -2,19 +2,20 @@ import os
 import dotenv
 dotenv.load_dotenv()
 
-from db.elastic_search import ElasticSearch
-es = ElasticSearch()
-
-from LLM.GEMINI import GEMINI
-gemini = GEMINI()
+import time
+from pprint import pprint
 
 from utils.prompt_template import *
+from db.elastic_search import ElasticSearch
+from LLM.GEMINI import GEMINI
 
+es = ElasticSearch()
+gemini = GEMINI()
 INDEX_NAME = os.getenv('INDEX_NAME')
 
 
 def get_response(query: str, history = [], k: int = 5):
-    # try:
+    try:
         """
         input:
             query: str
@@ -25,19 +26,30 @@ def get_response(query: str, history = [], k: int = 5):
             response: str
         """
         # --- Rewrite and Classify ---
-        rewrite_response = gemini.generate(prompt=REWRITE_TEMPLATE.format(query=query), temperature=0.3)
-        queries = None
         default_answer = "Xin lỗi, hiện tại tôi chưa thể trả lời câu hỏi này. Bạn có thể hỏi câu hỏi khác được không?"
+        rewrite_response = gemini.generate(prompt=REWRITE_TEMPLATE.format(query=query), temperature=0.4)
+        queries = None
         if rewrite_response:
-            if rewrite_response.candidates[0].content:
+            if "content" in rewrite_response.candidates[0]:
                 print(rewrite_response.text)
                 if rewrite_response.text.strip().lower() == "no":
                     queries = None
                 else:
                     queries = rewrite_response.text.strip().split('\n')
-                    queries = [query.strip() for query in queries]
-                    queries = [query for query in queries if query]
                     queries.append(query)
+        
+        
+        # cls_response = gemini.generate(prompt=CLASSIFY_TEMPLATE.format(query=query), temperature=0.4)
+        # query_class = None
+        # if cls_response:
+        #     if "content" in cls_response.candidates[0]:
+        #         if cls_response.text.strip().lower() == "legal":
+        #             query_class = "legal"
+
+        # if query_class == "legal":           
+        #     queries = [query]
+        # else:
+        #     queries = None
 
         if queries:
             contexts = []
@@ -55,17 +67,18 @@ def get_response(query: str, history = [], k: int = 5):
             context = ""
 
         prompt = ANSWER_TEMPLATE.format(context=context, query=query)
-        print(prompt)
-        response = gemini.generate(prompt=prompt)
+        # print(prompt)
+        response = gemini.generate(prompt=prompt, temperature=0.4)
 
         answer = default_answer
         if response:
-            if response.candidates[0].content:
-                return response.text
+            if 'content' in response.candidates[0]:
+                answer = response.text
+        return answer, context
 
-    # except Exception as e:
-    #     print(e)
-    #     return "Xin lỗi, hiện tại tôi chưa thể trả lời câu hỏi này!"
+    except Exception as e:
+        print(e)
+        return "Xin lỗi, hiện tại tôi chưa thể trả lời câu hỏi này. Bạn có thể hỏi câu hỏi khác được không?", ""
 
 def main():
     # query = "Tiền lương thử việc của người lao động được quy định như thế nào"
@@ -73,12 +86,14 @@ def main():
     #      {"role": "user", "parts": ["Chào bạn"]},
     #      {"role": "model", "parts": ["Xin chào, tôi là Lawie. \nTôi là hệ thống hỗ trợ hỏi đáp pháp luật."]}
     # ]
-    # query = "chào bạn, tôi là Nguyên, tôi cần tìm thông tin luật hình sự"
+    query = "Trong trường hợp nào thì có thể khởi tố, điều tra, truy tố, xét xử đối với người mà hành vi của họ đã có bản án của Tòa án đã có hiệu lực pháp luật?"
     # query = "Ai là luật sư đầu tiên trên thế giới"
-    query = "Tiền lương thử việc của người lao động được quy định như thế nào"
-
+    # query = "Tiền lương thử việc của người lao động được quy định như thế nào"
+    s_time = time.time()
     response = get_response(query=query)
-    print(response)
+    pprint(response)
+    e_time = time.time()
+    print("Response time: ", e_time - s_time)
 
 if __name__=="__main__":
     main()
