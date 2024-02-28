@@ -18,43 +18,73 @@ openai = OPENAI(api_key=os.getenv('OPENAI_API_KEY'))
 INDEX_NAME = os.getenv('INDEX_NAME')
 
 
-def get_response(query: str, history = [], k: int = 5):
+def gen_queries(query):
     try:
-        """
-        input:
-            query: str
-            history: list
-                example: [{"role": "user", "parts": ["hi"]}, {"role": "model", "parts": ["Hello"]}]
-            k: number of queries to be rewritten
-        output:
-            response: str
-        """
-        # --- Rewrite and Classify ---
-        default_answer = "Xin lỗi, hiện tại tôi chưa thể trả lời câu hỏi này. Bạn có thể hỏi câu hỏi khác được không?"
-
-        rewrite_prompt = """Original question: {query}\nQueries:\n"""
+        rewrite_prompt = """User (Original question): {query}\nLawie:"""
         queries = [query]
-        rewrite_response = openai.get_response(prompt=rewrite_prompt, system_prompt=REWRITE_TEMPLATE, stream=False)
+        rewrite_response = openai.get_response(prompt=rewrite_prompt.format(query=query), system_prompt=REWRITE_TEMPLATE, stream=False)
         rewrite_response = next(rewrite_response)
-        if rewrite_response:
-            queries = queries + rewrite_response.split('\n')
+        return rewrite_response
+    except Exception as e:
+        logging.error(f"GEN QUERIES: {e}")
+        return [query]
+
+def gen_answer(query: str, history = [], k: int = 5, rewrite: bool = True, search_method: str = "hybrid"):
+    try:
+        # --- Rewrite and Classify ---
+        if rewrite:
+            queries = [query]
+            rewrite_response = gen_queries(query)
+            logging.info(f"rewrite_response: {rewrite_response}")   
+
+            if rewrite_response.strip().startswith("queries"):
+                queries += rewrite_response.strip()[8:].split('\n')
+            elif rewrite_response.strip().startswith("response"):
+                return rewrite_response.strip()[8:]
+        else:
+            queries = [query]
         logging.info(f"queries: {queries}")
 
+        # --- Get Context ---
+        search_method = search_method.lower().strip()
         if queries:
             contexts = []
-            hb_doc_ids = []
-            for sub_query in queries:
-                hb_results = es.hybrid_search(index_name=INDEX_NAME, query=query, k=k)
-                hb_doc_ids.extend(hb_results)
+            if search_method == "hybrid":
+                hb_doc_ids = []
+                for sub_query in queries:
+                    hb_results = es.hybrid_search(index_name=INDEX_NAME, query=sub_query, k=k)
+                    hb_doc_ids.extend(hb_results)
 
-            for id_ in list(set(hb_doc_ids)):
-                doc = es.get_doc_by_id(index_name=INDEX_NAME, id=id_)
-                contexts.append(doc['hits']['hits'][0]['_source']['content'])
-            
+                for id_ in list(set(hb_doc_ids)):
+                    doc = es.get_doc_by_id(index_name=INDEX_NAME, id=id_)
+                    contexts.append(doc['hits']['hits'][0]['_source']['content'])
+            elif search_method in ["bm25", "vector"]:
+                if search_method == "bm25":
+                    doc_ids = []
+                    for sub_query in queries:
+                        bm25_results = es.bm25_search(index_name=INDEX_NAME, query=sub_query, k=k)
+                        for hit in bm25_results['hits']['hits']:
+                            if hit['_id'] not in doc_ids:
+                                doc_ids.append(hit['_id'])
+                                contexts.append(hit['_source']['content'])
+                else:
+                    doc_ids = []
+                    for sub_query in queries:
+                        vector_results = es.vector_search(index_name=INDEX_NAME, query=sub_query, k=k)
+                        for hit in vector_results['hits']['hits']:
+                            if hit['_id'] not in doc_ids:
+                                doc_ids.append(hit['_id'])
+                                contexts.append(hit['_source']['content'])
+            else:
+                contexts = []
+
             context = '\n\n'.join(contexts)
         else:
             context = ""
 
+        logging.info(f"context: {context}")
+
+        # --- Get Response ---
         prompt = """\
         # Context
         {context}
@@ -65,23 +95,18 @@ def get_response(query: str, history = [], k: int = 5):
         response = openai.get_response(prompt=prompt.format(context=context, query=query), system_prompt=ANSWER_TEMPLATE, stream=True)
         for r in response:
             yield r
-
+        return
     except Exception as e:
         logging.error(f"GET RESPONSE: {e}")
         return "Xin lỗi, hiện tại tôi chưa thể trả lời câu hỏi này. Bạn có thể hỏi câu hỏi khác được không?", ""
 
 def main():
-    # query = "Tiền lương thử việc của người lao động được quy định như thế nào"
-    # history = [
-    #      {"role": "user", "parts": ["Chào bạn"]},
-    #      {"role": "model", "parts": ["Xin chào, tôi là Lawie. \nTôi là hệ thống hỗ trợ hỏi đáp pháp luật."]}
-    # ]
-    # query = "Trong trường hợp nào thì có thể khởi tố, điều tra, truy tố, xét xử đối với người mà hành vi của họ đã có bản án của Tòa án đã có hiệu lực pháp luật?"
-    # query = "Ai là luật sư đầu tiên trên thế giới"
-    query = "Tiền lương thử việc của người lao động được quy định như thế nào"
-    response = get_response(query=query)
+    query = "quan hệ với người cùng dòng máu là gì và sẽ bị xử phạt như thế nào"
+    # query = "xin chào, bạn là ai"
+    response = gen_answer(query=query, search_method="hybrid")
     for r in response:
         print(r, end="", flush=True)
+    print()
 
 if __name__=="__main__":
     main()

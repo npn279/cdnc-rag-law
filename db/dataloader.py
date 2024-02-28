@@ -2,6 +2,7 @@ import sys
 sys.path.append('')
 
 import json
+import logging
 from datasets import load_dataset
 from llama_index.core import Document
 
@@ -37,6 +38,18 @@ def load_hf(dataset_name: str, split='train', content_column='content', token: s
 
         return documents
     except Exception as e:
-        print(e)
+        logging.error(f"LOAD HF: {e}")
         return []
+    
+def load_txt(file_path):
+    try:
+        with open(file_path, "r", encoding="utf8") as f:
+            texts = f.read()
+
+        return [Document(text=texts, metadata={}, doc_id=file_path)]
+    except Exception as e:
+        logging.error(f"LOAD TXT: {e}")
+        return []
+
+        
 

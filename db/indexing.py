@@ -45,10 +45,18 @@ def indexing_data(documents: list, index_name: str = None):
         return False
 
 if __name__ == "__main__":
-    law_docs = load_hf(
-        dataset_name="iamnguyen/cdnc_law",
-        split='luat',
-        content_column='text',
-        token=HF_TOKEN
-    )
-    indexing_data(law_docs, INDEX_NAME)
+    luat_hinh_su = load_txt("data/Bo luat hinh su 2015 100.txt")
+    luat_dan_su = load_txt("data/Luat dan su 2015.txt")
+    luat_hanh_chinh = load_txt("data/Luat to tung hanh chinh 2015.txt")
+
+    indexing_data(luat_hinh_su, INDEX_NAME)
+    indexing_data(luat_dan_su, INDEX_NAME)
+    indexing_data(luat_hanh_chinh, INDEX_NAME)
+    
+    # law_docs = load_hf(
+    #     dataset_name="iamnguyen/cdnc_law",
+    #     split='luat',
+    #     content_column='text',
+    #     token=HF_TOKEN
+    # )
+    # indexing_data(law_docs, INDEX_NAME)
