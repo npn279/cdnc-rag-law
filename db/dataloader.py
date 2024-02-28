@@ -3,7 +3,7 @@ sys.path.append('')
 
 import json
 from datasets import load_dataset
-from llama_index import Document
+from llama_index.core import Document
 
 def _load_hf(dataset_name: str,
             split: str,

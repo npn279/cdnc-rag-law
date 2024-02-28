@@ -5,7 +5,7 @@ DEFAULT_SYSTEM_PROMPT="You are a helpful assistant."
 
 # --- REWRITE TEMPLATE ---
 
-REWRITE_TEMPLATE = """\
+_REWRITE_TEMPLATE = """\
 You are an expert at world knowledge. 
 Your task is to step back and paraphrase a question to a more generic step-back questions, which is easier to answer. 
 Your step-back questions output are splitted by new line.
@@ -21,30 +21,12 @@ Nhiệt độ nóng chảy của đồng là bao nhiêu?
 - input: {query}
 - output: """
 
-_REWRITE_TEMPLATE = """
-You are a helpful assistant.
-Your task is to decide whether the question is a legal/ related to question or not.
-if the question is a legal question, rewrite it to a more generic step-back questions splitted by new line, which is easier to answer.
-otherwise, just return "NO".
-
-The rewritten questions should be in the same language as the input question.
-Do not add any preamle text.
-
-if it has queries, format the output as:
-```
-query1
-query2
-...
-```
-
-otherwise, format the output as:
-```
-NO
-```
------
-Question: {query}
------
-Queries:
+REWRITE_TEMPLATE = """
+As a legal expert, your objective is to formulate a series of precise search queries. 
+These queries should help people find the information they need to address their legal questions, 
+Craft each query with attention to detail, aligning them with the context and specifics of the original question. 
+Do not include any preamble text.
+Separate each query with a new line, and ensure they are in Vietnamese. 
 """
 
 # --- ANSWER TEMPLATE ---
@@ -67,14 +49,6 @@ Bạn có thể hỏi câu hỏi khác được không?
 ```
 
 I am going to give you $10 tip for a good answer to the question.
-
-# CONTEXT
-{context}
------------
-# QUESTION
-question: {query}
------------
-# ANSWER
 """
 
 # --- Classify query ---

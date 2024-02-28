@@ -5,10 +5,10 @@ import os
 import dotenv
 dotenv.load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-EMB_MODEL = os.getenv('EMB_MODEL')
+OPENAI_EMBEDDING_MODEL_NAME = os.getenv('OPENAI_EMBEDDING_MODEL_NAME')
 
 from openai import OpenAI
-client = OpenAI()
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 
 def get_emb(text: str):
@@ -17,7 +17,7 @@ def get_emb(text: str):
     """
     response = client.embeddings.create(
         input=text,
-        model=EMB_MODEL
+        model=OPENAI_EMBEDDING_MODEL_NAME
     )
 
     return response

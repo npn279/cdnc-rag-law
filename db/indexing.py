@@ -5,19 +5,20 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-from llama_index import VectorStoreIndex
-from llama_index.llms import OpenAI
-from llama_index.storage.storage_context import StorageContext
-from llama_index.service_context import ServiceContext
-from llama_index.vector_stores import ElasticsearchStore
-from llama_index.node_parser import LangchainNodeParser
+from llama_index.core import StorageContext, ServiceContext, VectorStoreIndex, Settings
+from llama_index.core.node_parser import LangchainNodeParser
+from llama_index.embeddings.openai import OpenAIEmbedding
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from llama_index.vector_stores.elasticsearch import ElasticsearchStore
 from db.dataloader import *
 
 # ENVS
 INDEX_NAME = os.getenv("INDEX_NAME")
 HF_TOKEN = os.getenv("HF_TOKEN")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
+Settings.embed_model = OpenAIEmbedding(model=os.getenv("OPENAI_EMBEDDING_MODEL_NAME"), api_key=OPENAI_API_KEY, embed_batch_size=16) 
+# Load data
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1024, chunk_overlap=256)
 node_parser = LangchainNodeParser(text_splitter)
 

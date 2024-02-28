@@ -4,13 +4,17 @@ dotenv.load_dotenv()
 
 import time
 from pprint import pprint
+import logging
+logging.basicConfig(level=logging.INFO)
 
 from utils.prompt_template import *
 from db.elastic_search import ElasticSearch
 from LLM.GEMINI import GEMINI
+from LLM.OPENAI import OPENAI
 
 es = ElasticSearch()
 gemini = GEMINI()
+openai = OPENAI(api_key=os.getenv('OPENAI_API_KEY'))
 INDEX_NAME = os.getenv('INDEX_NAME')
 
 
@@ -27,29 +31,14 @@ def get_response(query: str, history = [], k: int = 5):
         """
         # --- Rewrite and Classify ---
         default_answer = "Xin lỗi, hiện tại tôi chưa thể trả lời câu hỏi này. Bạn có thể hỏi câu hỏi khác được không?"
-        rewrite_response = gemini.generate(prompt=REWRITE_TEMPLATE.format(query=query), temperature=0.4)
-        queries = None
-        if rewrite_response:
-            if "content" in rewrite_response.candidates[0]:
-                print(rewrite_response.text)
-                if rewrite_response.text.strip().lower() == "no":
-                    queries = None
-                else:
-                    queries = rewrite_response.text.strip().split('\n')
-                    queries.append(query)
-        
-        
-        # cls_response = gemini.generate(prompt=CLASSIFY_TEMPLATE.format(query=query), temperature=0.4)
-        # query_class = None
-        # if cls_response:
-        #     if "content" in cls_response.candidates[0]:
-        #         if cls_response.text.strip().lower() == "legal":
-        #             query_class = "legal"
 
-        # if query_class == "legal":           
-        #     queries = [query]
-        # else:
-        #     queries = None
+        rewrite_prompt = """Original question: {query}\nQueries:\n"""
+        queries = [query]
+        rewrite_response = openai.get_response(prompt=rewrite_prompt, system_prompt=REWRITE_TEMPLATE, stream=False)
+        rewrite_response = next(rewrite_response)
+        if rewrite_response:
+            queries = queries + rewrite_response.split('\n')
+        logging.info(f"queries: {queries}")
 
         if queries:
             contexts = []
@@ -66,18 +55,19 @@ def get_response(query: str, history = [], k: int = 5):
         else:
             context = ""
 
-        prompt = ANSWER_TEMPLATE.format(context=context, query=query)
-        print(prompt)
-        response = gemini.generate(prompt=prompt, temperature=0.4)
-
-        answer = default_answer
-        if response:
-            if 'content' in response.candidates[0]:
-                answer = response.text
-        return answer, context
+        prompt = """\
+        # Context
+        {context}
+        # Question
+        {query}
+        # Answer
+        """
+        response = openai.get_response(prompt=prompt.format(context=context, query=query), system_prompt=ANSWER_TEMPLATE, stream=True)
+        for r in response:
+            yield r
 
     except Exception as e:
-        print(e)
+        logging.error(f"GET RESPONSE: {e}")
         return "Xin lỗi, hiện tại tôi chưa thể trả lời câu hỏi này. Bạn có thể hỏi câu hỏi khác được không?", ""
 
 def main():
@@ -89,13 +79,9 @@ def main():
     # query = "Trong trường hợp nào thì có thể khởi tố, điều tra, truy tố, xét xử đối với người mà hành vi của họ đã có bản án của Tòa án đã có hiệu lực pháp luật?"
     # query = "Ai là luật sư đầu tiên trên thế giới"
     query = "Tiền lương thử việc của người lao động được quy định như thế nào"
-    s_time = time.time()
     response = get_response(query=query)
-    print(response[0])
-    print("-----")
-    print(response[1])
-    e_time = time.time()
-    print("Response time: ", e_time - s_time)
+    for r in response:
+        print(r, end="", flush=True)
 
 if __name__=="__main__":
     main()

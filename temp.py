@@ -1,8 +1,16 @@
-from LLM.GEMINI import GEMINI
-gemini = GEMINI()
+import logging
+logging.basicConfig(level=logging.INFO)
 
+from LLM.OPENAI import get_response
 from utils.prompt_template import *
 
-query = "chạy xe đụng chết người bị phạt bao nhiêu tiền"
-rewrite_response = gemini.generate(prompt=REWRITE_TEMPLATE.format(query=query), temperature=0.4)
-print(rewrite_response.candidates)
+prompt = """
+Original question: Đi ngược chiều bị phạt bao nhiêu tiền?
+Queries:
+
+"""
+
+response = get_response(prompt=prompt, stream=True, system_prompt=REWRITE_TEMPLATE)
+# print(response)
+for r in response:
+    print(r, end="", flush=True)
