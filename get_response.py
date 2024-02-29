@@ -5,7 +5,7 @@ dotenv.load_dotenv()
 import time
 from pprint import pprint
 import logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 
 from utils.prompt_template import *
 from db.elastic_search import ElasticSearch
@@ -29,7 +29,7 @@ def gen_queries(query):
         logging.error(f"GEN QUERIES: {e}")
         return [query]
 
-def gen_answer(query: str, history = [], k: int = 5, rewrite: bool = True, search_method: str = "hybrid"):
+def gen_answer(query: str, history = [], k: int = 5, rewrite: bool = True, search_method: str = "hybrid", stream=True, return_context=False):
     try:
         # --- Rewrite and Classify ---
         if rewrite:
@@ -40,7 +40,7 @@ def gen_answer(query: str, history = [], k: int = 5, rewrite: bool = True, searc
             if rewrite_response.strip().startswith("queries"):
                 queries += rewrite_response.strip()[8:].split('\n')
             elif rewrite_response.strip().startswith("response"):
-                return rewrite_response.strip()[8:]
+                yield rewrite_response.strip()[8:]
         else:
             queries = [query]
         logging.info(f"queries: {queries}")
@@ -86,24 +86,31 @@ def gen_answer(query: str, history = [], k: int = 5, rewrite: bool = True, searc
 
         # --- Get Response ---
         prompt = """\
+        ----------
         # Context
         {context}
+        ----------
         # Question
         {query}
+        ----------
         # Answer
-        """
-        response = openai.get_response(prompt=prompt.format(context=context, query=query), system_prompt=ANSWER_TEMPLATE, stream=True)
+        """.format(context=context, query=query)
+
+        response = openai.get_response(prompt=prompt, system_prompt=ANSWER_TEMPLATE, stream=stream, history=history)
         for r in response:
             yield r
+        if return_context:
+            yield "<REFERENCE>{context}</REFERENCE>".format(context=context)
         return
     except Exception as e:
         logging.error(f"GET RESPONSE: {e}")
         return "Xin lỗi, hiện tại tôi chưa thể trả lời câu hỏi này. Bạn có thể hỏi câu hỏi khác được không?", ""
 
 def main():
-    query = "quan hệ với người cùng dòng máu là gì và sẽ bị xử phạt như thế nào"
+    # query = "quan hệ với người cùng dòng máu là gì và sẽ bị xử phạt như thế nào"
     # query = "xin chào, bạn là ai"
-    response = gen_answer(query=query, search_method="hybrid")
+    query = "Thời hạn giao nộp tài liệu, chứng cứ là bao lâu?"
+    response = gen_answer(query=query, search_method="hybrid", stream=True, retrun_context=True)
     for r in response:
         print(r, end="", flush=True)
     print()

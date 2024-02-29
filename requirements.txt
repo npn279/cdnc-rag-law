@@ -1,4 +1,5 @@
 langchain
+openpyxl
 elasticsearch
 python-dotenv
 datasets
@@ -8,3 +9,4 @@ sentence-transformers
 google-generativeai
 llama-index
 llama-index-vector-stores-elasticsearch
+streamlit
