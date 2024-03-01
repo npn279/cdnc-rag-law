@@ -5,7 +5,7 @@ dotenv.load_dotenv()
 import time
 from pprint import pprint
 import logging
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(level=logging.INFO)
 
 from utils.prompt_template import *
 from db.elastic_search import ElasticSearch
@@ -108,9 +108,8 @@ def gen_answer(query: str, history = [], k: int = 5, rewrite: bool = True, searc
 
 def main():
     # query = "quan hệ với người cùng dòng máu là gì và sẽ bị xử phạt như thế nào"
-    # query = "xin chào, bạn là ai"
-    query = "Thời hạn giao nộp tài liệu, chứng cứ là bao lâu?"
-    response = gen_answer(query=query, search_method="hybrid", stream=True, retrun_context=True)
+    query = "theo luật dân sự, khi nào được mở thừa kế?"
+    response = gen_answer(query=query, search_method="hybrid", stream=True, return_context=True)
     for r in response:
         print(r, end="", flush=True)
     print()
