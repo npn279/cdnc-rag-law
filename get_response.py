@@ -108,8 +108,9 @@ def gen_answer(query: str, history = [], k: int = 5, rewrite: bool = True, searc
 
 def main():
     # query = "quan hệ với người cùng dòng máu là gì và sẽ bị xử phạt như thế nào"
-    query = "theo luật dân sự, khi nào được mở thừa kế?"
-    response = gen_answer(query=query, search_method="hybrid", stream=True, return_context=True)
+    # query = "theo luật dân sự, khi nào được mở thừa kế?"
+    query = "gây thương tích 20% thì phạt bao nhiêu"
+    response = gen_answer(query=query, search_method="hybrid", stream=True, return_context=False)
     for r in response:
         print(r, end="", flush=True)
     print()
